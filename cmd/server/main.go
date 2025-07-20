@@ -20,7 +20,7 @@ var (
 
 // loadHandler loads a CSV file into the global dataframe.
 // expects a JSON body like: {"path": "/path/to/my/file.csv"}
-
+// TODO: ensure we can use relative filepaths to where the CLI user is, not just to this main.go file
 func loadHandler(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		Path string `json:"path"`
@@ -55,9 +55,9 @@ func loadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// dataHandler returns the first 100 rows of the dataframe.
+// NOTE:  this is the function that I want to replace with duckdb internals for pagination and limiting
 func dataHandler(w http.ResponseWriter, r *http.Request) {
-	dfMutex.RLock() // lock for reading
+	dfMutex.RLock()
 	defer dfMutex.RUnlock()
 
 	if df.Nrow() == 0 {
@@ -65,33 +65,31 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// for simplicity, send first 100 rows, but handle case where there are fewer rows
 	w.Header().Set("Content-Type", "application/json")
 
-	// Calculate how many rows to return (all rows if less than 100)
+	// remember to handle cases with fewer than 100 rows
 	rowCount := df.Nrow()
 	if rowCount > 100 {
 		rowCount = 100
 	}
-
-	// Create indices for subsetting
 	indices := make([]int, rowCount)
 	for i := 0; i < rowCount; i++ {
 		indices[i] = i
 	}
 
-	// Proper error handling
-	err := json.NewEncoder(w).Encode(df.Subset(series.Ints(indices)))
-	if err != nil {
+	subset := df.Subset(series.Ints(indices))
+	records := subset.Records()
+
+	if err := json.NewEncoder(w).Encode(records); err != nil {
 		http.Error(w, "Failed to encode response: "+err.Error(), http.StatusInternalServerError)
 		log.Printf("Error encoding dataframe: %v", err)
-		return
 	}
 
+	log.Println("Successfully returned data")
 }
 
-// summaryHandler returns the output of Gota's Describe() function.
-
+// TODO: replace with output of duckdb describe() on the df
+// have a think about where best to do column-level descriptive statistics
 func summaryHandler(w http.ResponseWriter, r *http.Request) {
 	dfMutex.RLock()
 	defer dfMutex.RUnlock()
@@ -102,10 +100,18 @@ func summaryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(df.Describe())
-	if err != nil {
+
+	summary := df.Describe()
+	records := summary.Records()
+
+	if err := json.NewEncoder(w).Encode(records); err != nil {
+		http.Error(w, "Failed to encode response: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error encoding summary: %v", err)
 		return
 	}
+
+	log.Println("Successfully returned summary")
+
 }
 
 func main() {
