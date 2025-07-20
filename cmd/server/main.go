@@ -80,8 +80,11 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 		indices[i] = i
 	}
 
-	err := json.NewEncoder(w).Encode(df.Subset(series.Ints(indices...)))
+	// Proper error handling
+	err := json.NewEncoder(w).Encode(df.Subset(series.Ints(indices)))
 	if err != nil {
+		http.Error(w, "Failed to encode response: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error encoding dataframe: %v", err)
 		return
 	}
 
