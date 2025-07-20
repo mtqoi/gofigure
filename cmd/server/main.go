@@ -15,7 +15,7 @@ import (
 // for safe concurrent access from multiple api calls
 var (
 	df      dataframe.DataFrame
-	dfMutex = &sync.Mutex{}
+	dfMutex = &sync.RWMutex{}
 )
 
 // loadHandler loads a CSV file into the global dataframe.
@@ -48,7 +48,11 @@ func loadHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Successfully loaded dataframe from %s. Dimensions: %dx%d", payload.Path, df.Nrow(), df.Ncol())
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Load successful"))
+	_, err = w.Write([]byte("Load successful"))
+	if err != nil {
+		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // dataHandler returns the first 100 rows of the dataframe.
@@ -61,15 +65,32 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// for simplicity, send first 100 rows. A real app would use pagination. We will add this later
+	// for simplicity, send first 100 rows, but handle case where there are fewer rows
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(df.Subset(series.Ints(0, 99)))
+
+	// Calculate how many rows to return (all rows if less than 100)
+	rowCount := df.Nrow()
+	if rowCount > 100 {
+		rowCount = 100
+	}
+
+	// Create indices for subsetting
+	indices := make([]int, rowCount)
+	for i := 0; i < rowCount; i++ {
+		indices[i] = i
+	}
+
+	err := json.NewEncoder(w).Encode(df.Subset(series.Ints(indices...)))
+	if err != nil {
+		return
+	}
+
 }
 
 // summaryHandler returns the output of Gota's Describe() function.
 
 func summaryHandler(w http.ResponseWriter, r *http.Request) {
-	dfMutex.Rlock()
+	dfMutex.RLock()
 	defer dfMutex.RUnlock()
 
 	if df.Nrow() == 0 {
@@ -78,7 +99,10 @@ func summaryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(df.Describe())
+	err := json.NewEncoder(w).Encode(df.Describe())
+	if err != nil {
+		return
+	}
 }
 
 func main() {
