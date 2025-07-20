@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"sync"
 
 	"github.com/go-gota/gota/dataframe"
@@ -25,6 +26,7 @@ func loadHandler(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		Path string `json:"path"`
 	}
+
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "Bad request body", http.StatusBadRequest)
 		return
@@ -55,7 +57,12 @@ func loadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// NOTE:  this is the function that I want to replace with duckdb internals for pagination and limiting
+// dataHandler serves paginated data from the dataframe.
+// Query parameters:
+//   - start: The starting row index (default: 0)
+//   - limit: Maximum number of rows to return (default: 100, max: 1000)
+//
+// Returns JSON-encoded records from the specified range.
 func dataHandler(w http.ResponseWriter, r *http.Request) {
 	dfMutex.RLock()
 	defer dfMutex.RUnlock()
@@ -65,27 +72,62 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	// Parse and validate parameters
 
-	// remember to handle cases with fewer than 100 rows
-	rowCount := df.Nrow()
-	if rowCount > 100 {
-		rowCount = 100
+	// default 0
+	start, err := strconv.Atoi(r.URL.Query().Get("start"))
+	if err != nil || start < 0 {
+		start = 0
 	}
-	indices := make([]int, rowCount)
-	for i := 0; i < rowCount; i++ {
-		indices[i] = i
+
+	// default 100
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil || limit <= 0 {
+		limit = 100
+	}
+
+	// limit max
+	if limit > 1000 {
+		limit = 1000
+	}
+
+	end := start + limit
+	if end > df.Nrow() {
+		end = df.Nrow()
+	}
+
+	// Create subset
+	if start >= end {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"records": []interface{}{},
+			"message": "No data in specified range",
+			"total":   df.Nrow(),
+		})
+		return
+	}
+
+	indices := make([]int, end-start)
+	for i := 0; i < len(indices); i++ {
+		indices[i] = start + i
 	}
 
 	subset := df.Subset(series.Ints(indices))
 	records := subset.Records()
 
-	if err := json.NewEncoder(w).Encode(records); err != nil {
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(map[string]interface{}{
+		"records": records,
+		"total":   df.Nrow(),
+		"start":   start,
+		"limit":   limit,
+	}); err != nil {
 		http.Error(w, "Failed to encode response: "+err.Error(), http.StatusInternalServerError)
 		log.Printf("Error encoding dataframe: %v", err)
+		return
 	}
 
-	log.Println("Successfully returned data")
+	log.Printf("Successfully returned %d rows of data", len(records))
 }
 
 // TODO: replace with output of duckdb describe() on the df
