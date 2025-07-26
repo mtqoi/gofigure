@@ -66,7 +66,7 @@ from the `/tui` dir run `go run main.go`
 - [ ] other keyboard shortcuts (home/end, pgup/pgdown)
 - [ ] row numbering
 - [ ] help popup
-- [ ] summary statistics like jetbrains/positron?
+- [ ] summary statistics like jetbrains/positron? inc. sparklines?
 - [ ] change datatypes? round numerics? formatting e.g. %'s, $'s?
 - [ ] add mouse functionality
 - [ ] [charting?](https://github.com/NimbleMarkets/ntcharts)
