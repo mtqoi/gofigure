@@ -67,6 +67,7 @@ from the `/tui` dir run `go run main.go`
 - [ ] row numbering
 - [ ] help popup
 - [ ] summary statistics like jetbrains/positron?
+- [ ] change datatypes? round numerics? formatting e.g. %'s, $'s?
 
 ### server 
 - [ ] read from stdin 
