@@ -117,7 +117,8 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(map[string]interface{}{
-		"records": records,
+		"columns": df.Names(),
+		"records": records[1:],
 		"total":   df.Nrow(),
 		"start":   start,
 		"limit":   limit,
