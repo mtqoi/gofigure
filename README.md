@@ -1,32 +1,56 @@
-Start server:
+# GoFigure
+
+A data exploration and visualization tool built in Go with both server and terminal UI components.
+
+This is a work-in-progress tool primarily designed for my own use, and for practice with Go.
+
+## Overview
+
+GoFigure provides a simple way to load, visualize, and explore datasets. It consists of:
+- A server component for loading and querying data
+- A TUI (Terminal User Interface) for interactive data exploration
+
+![TUI Data Table View](img.png)
+
+![TUI Summary View](img_1.png)
+
+### Server Component
+
+Start the server:
 
 Run `go run main.go` from the `/cmd` dir
 
-Load data: 
+#### API Endpoints
+
+**Load Data:**
 
 From the `/cmd` dir 
 
 ```
 curl -X POST -d '{"path":"../../test_data/iris.csv"}' http://localhost:8080/load
 ```
+**Get Data:**
 
-Get data:
 ```
 curl http://localhost:8080/data
 ```
-& has parameters: `start`, `limit`
+Parameters:
+- `start`: Starting row index
+- `limit`: Number of rows to return
 
-Describe data:
+**Get Data Summary:**
+
+
 ```
 curl http://localhost:8080/summary
 ```
 
+### Terminal UI
 
-TUI - from the `/tui` dir frun `go run main.go`
+Run the terminal UI:
 
-![img.png](img.png)
+from the `/tui` dir run `go run main.go`
 
-![img_1.png](img_1.png)
 
 ## TODO
 
