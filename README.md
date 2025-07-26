@@ -6,27 +6,27 @@ Load data:
 
 From the `/cmd` dir 
 
-```aiignore
+```
 curl -X POST -d '{"path":"../../test_data/iris.csv"}' http://localhost:8080/load
 ```
 
 Get data:
-```aiignore
+```
 curl http://localhost:8080/data
 ```
 & has parameters: `start`, `limit`
 
 Describe data:
-```aiignore
+```
 curl http://localhost:8080/summary
 ```
 
 
 TUI - from the `/tui` dir frun `go run main.go`
 
-![img.png](img.png)
+![./img.png](img.png)
 
-![img_1.png](img_1.png)
+![./img_1.png](img_1.png)
 ## TODO
 
 ### tui 
