@@ -19,6 +19,19 @@ var (
 	dfMutex = &sync.RWMutex{}
 )
 
+// common data structures
+type ResponseData struct {
+	Columns []string   `json:"columns"`
+	Records [][]string `json:"records"`
+	Meta    MetaData   `json:"meta"`
+}
+
+type MetaData struct {
+	Total int `json:"total"`
+	Start int `json:"start"`
+	Limit int `json:"limit"`
+}
+
 // loadHandler loads a CSV file into the global dataframe.
 // expects a JSON body like: {"path": "/path/to/my/file.csv"}
 // TODO: ensure we can use relative filepaths to where the CLI user is, not just to this main.go file
@@ -115,14 +128,17 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 	subset := df.Subset(series.Ints(indices))
 	records := subset.Records()
 
+	response := ResponseData{
+		Columns: df.Names(),
+		Records: records[1:],
+		Meta: MetaData{
+			Total: df.Nrow(),
+			Start: start,
+			Limit: limit,
+		},
+	}
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(map[string]interface{}{
-		"columns": df.Names(),
-		"records": records[1:],
-		"total":   df.Nrow(),
-		"start":   start,
-		"limit":   limit,
-	}); err != nil {
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, "Failed to encode response: "+err.Error(), http.StatusInternalServerError)
 		log.Printf("Error encoding dataframe: %v", err)
 		return
@@ -147,7 +163,17 @@ func summaryHandler(w http.ResponseWriter, r *http.Request) {
 	summary := df.Describe()
 	records := summary.Records()
 
-	if err := json.NewEncoder(w).Encode(records); err != nil {
+	response := ResponseData{
+		Columns: summary.Names(),
+		Records: records[1:],
+		Meta: MetaData{
+			Total: len(records), // placeholder
+			Start: 0,
+			Limit: len(records), // placeholder
+		},
+	}
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, "Failed to encode response: "+err.Error(), http.StatusInternalServerError)
 		log.Printf("Error encoding summary: %v", err)
 		return
