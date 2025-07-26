@@ -69,6 +69,7 @@ from the `/tui` dir run `go run main.go`
 - [ ] summary statistics like jetbrains/positron?
 - [ ] change datatypes? round numerics? formatting e.g. %'s, $'s?
 - [ ] add mouse functionality
+- [ ] [charting?](https://github.com/NimbleMarkets/ntcharts)
 
 ### server 
 - [ ] read from stdin 
