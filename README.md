@@ -68,6 +68,7 @@ from the `/tui` dir run `go run main.go`
 - [ ] help popup
 - [ ] summary statistics like jetbrains/positron?
 - [ ] change datatypes? round numerics? formatting e.g. %'s, $'s?
+- [ ] add mouse functionality
 
 ### server 
 - [ ] read from stdin 
