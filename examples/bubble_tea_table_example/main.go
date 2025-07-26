@@ -80,7 +80,7 @@ type resData struct {
 
 func main() {
 
-	var request_type = "/data"
+	var request_type = "/summary"
 	requestUrl := fmt.Sprintf("http://localhost:%d%s", serverPort, request_type)
 
 	fmt.Println("Making request to", requestUrl)
@@ -119,17 +119,18 @@ func main() {
 		columns = append(columns,
 			table.Column{
 				Title: title,
-				Width: 10,
+				Width: 15,
 			})
 	}
 
-	var numrows = d.Limit
+	var numrows = d.Limit // TODO: refactor so I don't need a varaible here
 	rows := make([]table.Row, 0, numrows)
 	for _, row := range d.Records {
-		rows = append(rows,
-			table.Row{
-				row[0], row[1], row[2], row[3], row[4],
-			})
+		tableRow := make(table.Row, 0, len(row))
+		for _, cell := range row {
+			tableRow = append(tableRow, cell)
+		}
+		rows = append(rows, tableRow)
 	}
 
 	t := table.New(
