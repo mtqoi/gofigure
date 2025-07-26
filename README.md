@@ -31,6 +31,7 @@ TUI - from the `/tui` dir frun `go run main.go`
 ## TODO
 
 ### tui 
+- [ ] refactor into different files: i) requests; ii) modelling; iii) displaying
 - [ ] add load data to server capabilities
 - [ ] read from stdin + display in table
 - [ ] variable column widths depending on data
@@ -50,3 +51,9 @@ TUI - from the `/tui` dir frun `go run main.go`
 - [ ] add filtering and paging
 - [ ] add sorting
 - [ ] caching or compression?
+- [ ] different server ports
+
+### both
+- [ ] config file for server port
+- [ ] add tests
+- [ ] shared package for data modelling?
