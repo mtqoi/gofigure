@@ -24,9 +24,10 @@ curl http://localhost:8080/summary
 
 TUI - from the `/tui` dir frun `go run main.go`
 
-![./img.png](img.png)
+![img.png](img.png)
 
-![./img_1.png](img_1.png)
+![img_1.png](img_1.png)
+
 ## TODO
 
 ### tui 
